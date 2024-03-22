@@ -1,3 +1,5 @@
+drop materialized view if exists vital_signs_unpivot;
+create materialized view vital_signs_unpivot as
 with summary as (
     select distinct icustay_id, label
     , first_value(valuenum) over (partition by icustay_id, label order by charttime) as fst_val

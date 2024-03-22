@@ -1,3 +1,4 @@
+
 with vital_signs as (
     select icustay_id,
            charttime,
@@ -31,3 +32,38 @@ with vital_signs as (
 )
 
 select * from vital_signs_cohort;
+
+drop materialized view if exists vital_signs;
+create materialized view vital_signs as (
+    with vital_signs as (
+        select icustay_id,
+               charttime,
+               case when itemid in (456,52,6702,443,220052,220181,225312) then 'map'
+                    when itemid in (223762,676,223761,678) then 'temp'
+                    when itemid in (211,220045) then 'heart_rate'
+                    when itemid in (113,1103,220074) then 'cvp'
+                else null end as label,
+
+                case when itemid in (223761,678) and ((valuenum-32)/1.8)<10 then null
+                     when itemid in (456,52,6702,443,220052,220181,225312) and (valuenum <= 0 or valuenum >= 300) then null
+                     when itemid in (211,220045) and (valuenum <= 0 or valuenum >= 300) then null
+                     when itemid in (223762,676) and valuenum < 10 then null
+                     -- convert F to C
+                     when itemid in (223761,678) then (valuenum-32)/1.8
+                     -- sanity checks on data - one outlier with spo2 < 25
+                     when itemid in (646,220277) and valuenum <= 25 then null
+                else valuenum end as valuenum
+        from chartevents
+        where error is distinct from 1
+    )
+
+    select v.icustay_id, v.charttime, v.label, v.valuenum
+    from cohort c
+    left join vital_signs v using (icustay_id)
+    where v.charttime between c.intime and c.intime + interval '1 day'
+          and v.charttime between c.intime and c.outtime
+          and v.label is not null
+          and v.valuenum is not null
+);
+
+select * from vital_signs;
