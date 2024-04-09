@@ -1,3 +1,20 @@
+-- 该段SQL代码是在MIMIC-III数据库环境下执行的一系列数据处理步骤，目的是为了分析重症监护病房（ICU）患者在接受经胸超声心动图（Transthoracic Echocardiography, TTE）检查后28天内的死亡率以及与使用去甲肾上腺素、多巴胺、血管活性药物和机械通气自由日数之间的关系。以下是代码各部分含义的概述：
+
+-- 首先，从inputevents_cv和inputevents_mv表中分别提取出关于去甲肾上腺素和多巴胺使用的剂量信息，并将它们合并到各自的norepinephrine和dobutamine表中。
+
+-- 对去甲肾上腺素的最大剂量进行计算，并创建norepinephrine_max表。
+
+-- 对于使用过多巴胺的患者，设置一个二元标志变量dobutamine_flag，表示患者是否接受过多巴胺治疗。
+
+-- 接下来，通过vasopressordurations和ventdurations表来计算每个患者在28天内无血管活性药物支持（vasofree）和无机械通气（ventfree）的天数。这包括计算药物或通气开始和结束时间，转换为小时数，然后计算持续总时长并转化为天数。
+
+-- 计算SOFA（序贯器官衰竭评估）评分在入院后第2天和第3天的变化情况，存储在sofa_2和sofa_3表中，并进一步计算SOFA评分下降值（sofa_drop）。
+
+-- 最后，通过自然左连接的方式，将所有这些子集的信息整合到名为subgroup的最终表中，其中包含患者ID (icustay_id)、住院ID (hadm_id)、TTE检查标识符(echo)，以及前述计算得到的各种指标（如去甲肾上腺素最大剂量、是否使用多巴胺、血管活性药物自由天数、机械通气自由天数和SOFA评分变化等）。
+
+-- 整个SQL脚本旨在构建一个用于研究特定ICU患者亚组特征的数据集，重点关注脓毒症患者在重症监护期间的心脏功能评估及其与预后的关系。
+
+
 with norepinephrine_cv as (
     select icustay_id, amount, charttime
     from inputevents_cv

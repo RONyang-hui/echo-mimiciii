@@ -1,4 +1,5 @@
-
+drop materialized view if exists vital_signs;
+create materialized view vital_signs as
 with vital_signs as (
     select icustay_id,
            charttime,

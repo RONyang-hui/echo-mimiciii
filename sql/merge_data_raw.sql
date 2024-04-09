@@ -1,3 +1,5 @@
+drop materialized view if exists merged_data_raw;
+create materialized view merged_data_raw as
 select *
 from basics
 left join icd9 using (hadm_id)

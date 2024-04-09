@@ -1,9 +1,14 @@
+-- 步骤1：删除已存在的名为“vital_signs_unpivot”的物化视图（如果有）
+-- 步骤2：创建名为“vital_signs_unpivot”的新物化视图
 drop materialized view if exists vital_signs_unpivot;
 create materialized view vital_signs_unpivot as
 with summary as (
     select distinct icustay_id, label
+    -- 对每个icustay_id和label分区，根据charttime升序获取首个valuenum值
     , first_value(valuenum) over (partition by icustay_id, label order by charttime) as fst_val
+    -- 对每个icustay_id和label分区，根据valuenum升序获取首个值（即最小值）
     , first_value(valuenum) over (partition by icustay_id, label order by valuenum) as min_val
+     -- 对每个icustay_id和label分区，根据valuenum降序获取首个值（即最大值）
     , first_value(valuenum) over (partition by icustay_id, label order by valuenum desc) as max_val
     from vital_signs
 )
